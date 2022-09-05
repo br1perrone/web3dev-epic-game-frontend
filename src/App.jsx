@@ -4,7 +4,9 @@ import { ethers } from "ethers";
 import githubLogo from "./assets/twitter-logo.svg"
 import "./App.css"
 
+import LoadingIndicator from './components/LoadingIndicator';
 import SelectCharacter from "./components/SelectCharacter";
+import Arena from './components/Arena';
 
 import { CONTRACT_ADDRESS, transformCharacterData } from "./constants";
 
@@ -16,7 +18,8 @@ const GITHUB_LINK = `https://github.com/${GITHUB_HANDLE}`
 const App = () => {
   const [currentAccount, setCurrentAccount] = useState(null);
   const [characterNFT, setCharacterNFT] = useState(null);
-
+  const [isLoading, setIsLoading] = useState(false);
+  
   const checkIfWalletIsConnected = async () => {
     try {
       /*
@@ -26,19 +29,14 @@ const App = () => {
   
       if (!ethereum) {
         console.log("Eu acho que você não tem a metamask!");
+        setIsLoading(false);
         return;
       } else {
         console.log("Nós temos o objeto ethereum", ethereum);
       }
       
-      /*
-       * Checa se estamos autorizados a acessar a carteira do usuário.
-       */
       const accounts = await ethereum.request({ method: "eth_accounts" });
 
-      /*
-       * Usuário pode ter múltiplas contas autorizadas, pegamos a primeira se estiver ali!
-       */
       if (accounts.length !== 0) {
         const account = accounts[0];
         console.log("Carteira conectada: ", account);
@@ -49,6 +47,8 @@ const App = () => {
     } catch (error) {
       console.error(error);
     }
+
+    setIsLoading(false);
   };
 
   const connectWalletAction = async () => {
@@ -78,6 +78,10 @@ const App = () => {
   };
 
   const renderContent = () => {
+    if (isLoading) {
+      return <LoadingIndicator />;
+    }
+    
     if (!currentAccount) {
       return (
         <div className="connect-wallet-container">
@@ -95,10 +99,13 @@ const App = () => {
     } else if (currentAccount && !characterNFT) {
       return <SelectCharacter
                setCharacterNFT={setCharacterNFT} />;
+    } else if (currentAccount && characterNFT) {
+      return <Arena characterNFT={characterNFT} setCharacterNFT={setCharacterNFT} />
     }
   };
   
   useEffect(() => {
+    setIsLoading(true);
     checkIfWalletIsConnected();
 
     (async () => {
@@ -132,6 +139,8 @@ const App = () => {
       } else {
         console.log("Nenhum personagem NFT foi encontrado");
       }
+
+      setIsLoading(false);
     };
   
     if (currentAccount) {
